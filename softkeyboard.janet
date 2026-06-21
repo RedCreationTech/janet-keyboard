@@ -65,6 +65,19 @@
 (def VK_U 0x55) (def VK_V 0x56) (def VK_W 0x57) (def VK_X 0x58) (def VK_Y 0x59)
 (def VK_Z 0x5A)
 
+# 符号键虚拟键码
+(def VK_OEM_3 0xC0)   # ` ~
+(def VK_OEM_MINUS 0xBD) # - _
+(def VK_OEM_PLUS 0xBB)  # = +
+(def VK_OEM_4 0xDB)   # [ {
+(def VK_OEM_6 0xDD)   # ] }
+(def VK_OEM_5 0xDC)   # \ |
+(def VK_OEM_1 0xBA)   # ; :
+(def VK_OEM_7 0xDE)   # ' "
+(def VK_OEM_COMMA 0xBC) # , <
+(def VK_OEM_PERIOD 0xBE) # . >
+(def VK_OEM_2 0xBF)   # / ?
+
 (def HWND_TOPMOST -1)
 
 (def PM_REMOVE 1)
@@ -253,38 +266,79 @@
 (def key-gap 5)
 (def row-height 55)
 
+# 最宽行（第一行）的键数，用于居中其他行
+(def MAX-KEYS-PER-ROW 14)
+
 (defn- centered-row-x [key-count]
   (let [total-width (+ (* key-count normal-key-width)
                        (* (dec key-count) key-gap))
-        max-width (+ (* 10 normal-key-width) (* 9 key-gap))]
+        max-width (+ (* MAX-KEYS-PER-ROW normal-key-width)
+                     (* (dec MAX-KEYS-PER-ROW) key-gap))]
     (+ 10 (div (- max-width total-width) 2))))
 
-(defn- make-key [label vk &opt width toggle?]
+(defn- make-key [label vk &opt width toggle? ime? shift-label]
   (default width normal-key-width)
   {:label label
    :vk vk
    :width width
-   :toggle? (or toggle? false)})
+   :toggle? (or toggle? false)
+   :ime? (or ime? false)
+   :shift-label (or shift-label label)})
 
 (def keyboard-rows
-  [[(make-key "1" VK_1) (make-key "2" VK_2) (make-key "3" VK_3)
-    (make-key "4" VK_4) (make-key "5" VK_5) (make-key "6" VK_6)
-    (make-key "7" VK_7) (make-key "8" VK_8) (make-key "9" VK_9)
-    (make-key "0" VK_0)]
-   [(make-key "Q" VK_Q) (make-key "W" VK_W) (make-key "E" VK_E)
-    (make-key "R" VK_R) (make-key "T" VK_T) (make-key "Y" VK_Y)
-    (make-key "U" VK_U) (make-key "I" VK_I) (make-key "O" VK_O)
-    (make-key "P" VK_P)]
-   [(make-key "A" VK_A) (make-key "S" VK_S) (make-key "D" VK_D)
-    (make-key "F" VK_F) (make-key "G" VK_G) (make-key "H" VK_H)
-    (make-key "J" VK_J) (make-key "K" VK_K) (make-key "L" VK_L)]
-   [(make-key "Z" VK_Z) (make-key "X" VK_X) (make-key "C" VK_C)
-    (make-key "V" VK_V) (make-key "B" VK_B) (make-key "N" VK_N)
-    (make-key "M" VK_M)]
-   [(make-key "Shift" VK_SHIFT 70 true)
-    (make-key "Space" VK_SPACE 300)
-    (make-key "Back" VK_BACK 90)
-    (make-key "Enter" VK_RETURN 80)]])
+  [[(make-key "`" VK_OEM_3 nil nil nil "~")
+    (make-key "1" VK_1 nil nil nil "!")
+    (make-key "2" VK_2 nil nil nil "@")
+    (make-key "3" VK_3 nil nil nil "#")
+    (make-key "4" VK_4 nil nil nil "$")
+    (make-key "5" VK_5 nil nil nil "%")
+    (make-key "6" VK_6 nil nil nil "^")
+    (make-key "7" VK_7 nil nil nil "&")
+    (make-key "8" VK_8 nil nil nil "*")
+    (make-key "9" VK_9 nil nil nil "(")
+    (make-key "0" VK_0 nil nil nil ")")
+    (make-key "-" VK_OEM_MINUS nil nil nil "_")
+    (make-key "=" VK_OEM_PLUS nil nil nil "+")
+    (make-key "Backspace" VK_BACK 95)]
+   [(make-key "q" VK_Q nil nil nil "Q")
+    (make-key "w" VK_W nil nil nil "W")
+    (make-key "e" VK_E nil nil nil "E")
+    (make-key "r" VK_R nil nil nil "R")
+    (make-key "t" VK_T nil nil nil "T")
+    (make-key "y" VK_Y nil nil nil "Y")
+    (make-key "u" VK_U nil nil nil "U")
+    (make-key "i" VK_I nil nil nil "I")
+    (make-key "o" VK_O nil nil nil "O")
+    (make-key "p" VK_P nil nil nil "P")
+    (make-key "[" VK_OEM_4 nil nil nil "{")
+    (make-key "]" VK_OEM_6 nil nil nil "}")
+    (make-key "\\" VK_OEM_5 nil nil nil "|")]
+   [(make-key "a" VK_A nil nil nil "A")
+    (make-key "s" VK_S nil nil nil "S")
+    (make-key "d" VK_D nil nil nil "D")
+    (make-key "f" VK_F nil nil nil "F")
+    (make-key "g" VK_G nil nil nil "G")
+    (make-key "h" VK_H nil nil nil "H")
+    (make-key "j" VK_J nil nil nil "J")
+    (make-key "k" VK_K nil nil nil "K")
+    (make-key "l" VK_L nil nil nil "L")
+    (make-key ";" VK_OEM_1 nil nil nil ":")
+    (make-key "'" VK_OEM_7 nil nil nil "\"")
+    (make-key "Enter" VK_RETURN 95)]
+   [(make-key "Shift" VK_SHIFT 80 true)
+    (make-key "z" VK_Z nil nil nil "Z")
+    (make-key "x" VK_X nil nil nil "X")
+    (make-key "c" VK_C nil nil nil "C")
+    (make-key "v" VK_V nil nil nil "V")
+    (make-key "b" VK_B nil nil nil "B")
+    (make-key "n" VK_N nil nil nil "N")
+    (make-key "m" VK_M nil nil nil "M")
+    (make-key "," VK_OEM_COMMA nil nil nil "<")
+    (make-key "." VK_OEM_PERIOD nil nil nil ">")
+    (make-key "/" VK_OEM_2 nil nil nil "?")
+    (make-key "Shift" VK_SHIFT 80 true)]
+   [(make-key "Space" VK_SPACE 705)
+    (make-key "输入法" VK_SHIFT 85 false true)]])
 
 (defn- build-layout [hwnd]
   (let [buttons @[]]
@@ -327,18 +381,19 @@
       (point-in-rect? px py (ffi/read (structs :rect) rect-buf)))
     buttons))
 
-(defn- update-shift-label [btn shift?]
-  (call "SetWindowTextW" (btn :hwnd)
-        (to-utf16 (if shift? "SHIFT(ON)" "SHIFT"))))
+(defn- update-shift-labels [shift-btns shift?]
+  (each btn shift-btns
+    (call "SetWindowTextW" (btn :hwnd)
+          (to-utf16 (if shift? "SHIFT(ON)" "Shift")))))
 
 (defn- letter? [vk]
   (and (>= vk VK_A) (<= vk VK_Z)))
 
 (defn- update-key-labels [buttons shift?]
   (each btn buttons
-    (when (letter? (btn :vk))
+    (when (not (or (btn :toggle?) (btn :ime?)))
       (call "SetWindowTextW" (btn :hwnd)
-            (to-utf16 (if shift? (btn :label) (string/ascii-lower (btn :label))))))))
+            (to-utf16 (if shift? (btn :shift-label) (btn :label)))))))
 
 (defn- set-key-pressed [btn pressed?]
   (let [style (call "GetWindowLongPtrW" (btn :hwnd) GWL_STYLE)
@@ -380,7 +435,7 @@
   (var current-font nil)
   (let [msg-buf (buffer/new-filled MSG-BUF-SIZE)
         pt-buf (buffer/new-filled (ffi/size (structs :point)))
-        shift-btn (find |(= VK_SHIFT ($ :vk)) buttons)
+        shift-btns (filter |(= VK_SHIFT ($ :vk)) buttons)
         # 非客户区尺寸，用于把客户区大小换算成完整窗口大小
         win-buf (buffer/new-filled (ffi/size (structs :rect)))
         client-buf (buffer/new-filled (ffi/size (structs :rect)))
@@ -444,8 +499,14 @@
                 (set pressed-btn hit)
                 (set pressed-at (os/clock))
                 (set-key-pressed hit true)
-                # 普通按键直接发送；Shift 的长/短按在松开时判断
-                (when (not (hit :toggle?))
+                # 输入法按钮直接切换输入法；普通按键直接发送；Shift 的长/短按在松开时判断
+                (cond
+                  (hit :ime?)
+                  (do
+                    (print "切换输入法")
+                    (flush)
+                    (toggle-ime))
+                  (not (hit :toggle?))
                   (send-key (hit :vk) shift?))))))
         (when (and down? dragging-gripper)
           # 拖动中：根据鼠标位移调整窗口大小，保持宽高比
@@ -482,7 +543,7 @@
                     (toggle-ime))
                   (do
                     (set shift? (not shift?))
-                    (update-shift-label shift-btn shift?)
+                    (update-shift-labels shift-btns shift?)
                     (update-key-labels buttons shift?)))))
             (set pressed-btn nil)))
         (set prev-lbutton down?))
@@ -496,9 +557,9 @@
 (defn main [& args]
   (ensure-ffi!)
   (let [class-name16 (to-utf16 "JanetSoftKeyboardClass")
-        title16 (to-utf16 "scada 软键盘")
+        title16 (to-utf16 "大键盘")
         _ (register-class! class-name16)
-        hwnd (create-main-window class-name16 title16 100 100 600 310)
+        hwnd (create-main-window class-name16 title16 100 100 850 340)
         client-buf (buffer/new-filled (ffi/size (structs :rect)))
         _ (call "GetClientRect" hwnd client-buf)
         [_ _ base-client-w base-client-h] (ffi/read (structs :rect) client-buf)
