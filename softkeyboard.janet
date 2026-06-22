@@ -33,6 +33,7 @@
 (def WS_EX_TOPMOST 0x00000008)
 (def WS_EX_NOACTIVATE 0x08000000)
 (def WS_EX_TOOLWINDOW 0x00000080)
+(def WS_EX_STATICEDGE 0x00020000)
 
 (def SW_SHOWNA 8)
 
@@ -233,7 +234,7 @@
 (defn- create-key [parent label16 x y w h]
   (let [hinstance (call "GetModuleHandleW" nil)
         hwnd (call "CreateWindowExW"
-                   WS_EX_NOACTIVATE
+                   (+ WS_EX_NOACTIVATE WS_EX_STATICEDGE)
                    (to-utf16 "STATIC")
                    label16
                    STATIC-STYLE
@@ -283,16 +284,30 @@
 (def key-height 45)
 (def key-gap 5)
 (def row-height 55)
+(def keyboard-margin-x 10)
+(def keyboard-margin-y 10)
+(def keyboard-width 810)
 
-# 最宽行（第一行）的键数，用于居中其他行
-(def MAX-KEYS-PER-ROW 14)
+(defn- row-width [keys]
+  (var total 0)
+  (each key keys
+    (set total (+ total (key :width))))
+  (+ total (* (dec (length keys)) key-gap)))
 
-(defn- centered-row-x [key-count]
-  (let [total-width (+ (* key-count normal-key-width)
-                       (* (dec key-count) key-gap))
-        max-width (+ (* MAX-KEYS-PER-ROW normal-key-width)
-                     (* (dec MAX-KEYS-PER-ROW) key-gap))]
-    (+ 10 (div (- max-width total-width) 2))))
+(defn- justified-row [keys]
+  (let [extra (- keyboard-width (row-width keys))
+        count (length keys)
+        row @[]]
+    (var x keyboard-margin-x)
+    (var prev-extra 0)
+    (each [idx key] (pairs keys)
+      (let [next-extra (math/floor (/ (* extra (inc idx)) count))
+            add-width (- next-extra prev-extra)
+            w (+ (key :width) add-width)]
+        (array/push row [key x w])
+        (set x (+ x w key-gap))
+        (set prev-extra next-extra)))
+    row))
 
 (defn- make-key [label vk &opt width toggle? ime? shift-label]
   (default width normal-key-width)
@@ -361,22 +376,18 @@
 (defn- build-layout [hwnd ime-label]
   (let [buttons @[]]
     (each [row-idx keys] (pairs (make-keyboard-rows ime-label))
-      (let [y (+ 10 (* row-idx row-height))
-            start-x (if (= row-idx 4)
-                      10
-                      (centered-row-x (length keys)))]
-        (var x start-x)
-        (each [key-idx key] (pairs keys)
+      (let [y (+ keyboard-margin-y (* row-idx row-height))
+            row (justified-row keys)]
+        (each [key x w] row
           (let [label16 (to-utf16 (key :label))
-                btn-hwnd (create-key hwnd label16 x y (key :width) key-height)
+                btn-hwnd (create-key hwnd label16 x y w key-height)
                 btn (merge key {:hwnd btn-hwnd
                                 :row row-idx
                                 :base-x x
                                 :base-y y
-                                :base-w (key :width)
+                                :base-w w
                                 :base-h key-height})]
-            (array/push buttons btn)
-            (set x (+ x (key :width) key-gap))))))
+            (array/push buttons btn)))))
     buttons))
 
 # -----------------------------------------------------------------------------
